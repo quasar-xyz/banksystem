@@ -2,9 +2,9 @@
 
 public class Card
 {
-    public string CardId { get; set; }
-    public Guid AccountId { get; set; }
-    public string PIN { get; set; }
-    
-    public Account Account { get; set; }
+    public Guid CardId { get; set; } // Unique identifier
+    public string CardNumber { get; set; } // 16-digit identifier
+    public string Pin { get; set; } // Encrypted PIN
+    public Guid AccountId { get; set; } // Foreign key to Account
+    public Account Account { get; set; } // Navigation property
 }
