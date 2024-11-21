@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using BankSystem.Data.Identity;
+using Microsoft.AspNetCore.Identity;
 
 namespace BankSystem.Data.TABLES;
 
-public class Account : IdentityUser
+public class Account : ApplicationUser
 {
     public Guid AccountId { get; set; }
     public string Name { get; set; }
