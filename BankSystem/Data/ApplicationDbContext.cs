@@ -16,7 +16,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Card> Cards { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
-    public DbSet<Account> Accounts { get; set; }
+
 
 
   

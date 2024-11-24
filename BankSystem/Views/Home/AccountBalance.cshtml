@@ -1,0 +1,8 @@
+﻿@{
+    ViewData["Title"] = "Account Balance";
+}
+
+<h1>Your Account Balance</h1>
+<p>Your current balance is: <strong>@ViewBag.Balance</strong></p>
+<a asp-controller="Home" asp-action="TransactionHistory" class="btn btn-primary btn-lg mt-4">Transaction History</a>
+<a asp-controller="Home" asp-action="NewPayment" class="btn btn-primary btn-lg mt-4">New Order</a>

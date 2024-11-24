@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 
 namespace BankSystem.Areas.Identity.Pages.Account
 {
@@ -42,8 +43,7 @@ namespace BankSystem.Areas.Identity.Pages.Account
             _emailSender = emailSender;
         }
 
-        [BindProperty]
-        public InputModel Input { get; set; }
+        [BindProperty] public InputModel Input { get; set; }
 
         public string ReturnUrl { get; set; }
 
@@ -56,24 +56,9 @@ namespace BankSystem.Areas.Identity.Pages.Account
             [Display(Name = "Email")]
             public string Email { get; set; }
 
-            [Required]
-            [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
-            [DataType(DataType.Password)]
-            [Display(Name = "Password")]
-            public string Password { get; set; }
+            [Required] [Display(Name = "Name")] public string Name { get; set; }
 
-            [DataType(DataType.Password)]
-            [Display(Name = "Confirm password")]
-            [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-            public string ConfirmPassword { get; set; }
-
-            [Required]
-            [Display(Name = "Name")]
-            public string Name { get; set; }
-
-            [Required]
-            [Display(Name = "Surname")]
-            public string Surname { get; set; }
+            [Required] [Display(Name = "Surname")] public string Surname { get; set; }
         }
 
         public async Task OnGetAsync(string returnUrl = null)
@@ -86,24 +71,45 @@ namespace BankSystem.Areas.Identity.Pages.Account
         {
             returnUrl ??= Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
 
                 user.Name = Input.Name;
                 user.Surname = Input.Surname;
-                user.Balance = 0; // Set balance to 0
-                user.Identificator = GenerateIdentificator(); // Generate random 6-character identifier
+                user.Balance = 0; 
+                user.Identificator = GenerateIdentificator(); 
+                user.PasswordHash = GenerateRandomPassword();
+
+             
+                var generatedPassword = GenerateRandomPassword();
+
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-                var result = await _userManager.CreateAsync(user, Input.Password);
+
+                var result = await _userManager.CreateAsync(user, generatedPassword);
+                TempData["GeneratedPassword"] = generatedPassword;
 
                 if (result.Succeeded)
                 {
-                    _logger.LogInformation("User created a new account with password.");
-                    
+                    _logger.LogInformation("User created a new account with a generated password.");
+
+
                     var roleResult = await _userManager.AddToRoleAsync(user, "Client");
+                    if (!roleResult.Succeeded)
+                    {
+                        foreach (var error in roleResult.Errors)
+                        {
+                            ModelState.AddModelError(string.Empty, error.Description);
+                        }
+
+                        return Page();
+                    }
+
+
+
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
@@ -113,12 +119,18 @@ namespace BankSystem.Areas.Identity.Pages.Account
                         values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
                         protocol: Request.Scheme);
 
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+
+                    var emailBody =
+                        $"Your account has been created successfully. Your generated password is: <strong>{generatedPassword}</strong> . Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.<br/>";
+                    emailBody +=
+                        $"Your account has been created successfully. Your generated password is: <strong>{generatedPassword}</strong>";
+                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email", emailBody);
+
 
                     if (_userManager.Options.SignIn.RequireConfirmedAccount)
                     {
-                        return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
+                        return RedirectToPage("RegisterConfirmation",
+                            new { email = Input.Email, returnUrl = returnUrl });
                     }
                     else
                     {
@@ -126,6 +138,7 @@ namespace BankSystem.Areas.Identity.Pages.Account
                         return LocalRedirect(returnUrl);
                     }
                 }
+
 
                 foreach (var error in result.Errors)
                 {
@@ -145,16 +158,28 @@ namespace BankSystem.Areas.Identity.Pages.Account
             }
             catch
             {
-                throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. Ensure it has a parameterless constructor.");
+                throw new InvalidOperationException(
+                    $"Can't create an instance of '{nameof(ApplicationUser)}'. Ensure it has a parameterless constructor.");
             }
         }
+
+
+        private string GenerateRandomPassword(int length = 6)
+        {
+            var passwordChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()";
+            var random = new Random();
+            var password = new string(Enumerable.Repeat(passwordChars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+            return password;
+        }
+
 
         private string GenerateIdentificator()
         {
             var characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             var random = new Random();
             return new string(Enumerable.Repeat(characters, 6)
-                                        .Select(s => s[random.Next(s.Length)]).ToArray());
+                .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
         private IUserEmailStore<ApplicationUser> GetEmailStore()

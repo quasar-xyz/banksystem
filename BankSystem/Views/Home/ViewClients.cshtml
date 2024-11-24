@@ -1,0 +1,48 @@
+﻿@model IEnumerable<BankSystem.Data.Identity.ApplicationUser>
+
+@{
+    ViewData["Title"] = "Clients and Balances";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Surname</th>
+        <th>Balance</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var client in Model)
+    {
+        <tr>
+            <td>@client.Name</td>
+            <td>@client.Surname</td>
+            <td>@client.Balance</td>
+            <td>
+                <a href="@Url.Action("CreateCard", "Home")" class="btn btn-primary">Create Card</a>
+                <a href="@Url.Action("DeleteClient", "Home", new { AccountId = client.Id })" class="btn btn-danger">
+                    Delete Account
+                </a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

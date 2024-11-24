@@ -2,13 +2,13 @@
 
 public class Transaction
 {
-    public Guid TransactionId { get; set; } 
-    public Guid AccountId { get; set; } 
-    public string RecipientAccountNumber { get; set; } 
-    public string RecipientBankCode { get; set; } 
-    public decimal Amount { get; set; } 
-    public DateTime Timestamp { get; set; } 
+    public Guid TransactionId { get; set; }
+    public string AccountId { get; set; } 
+    public string AccountNumber { get; set; } 
+    public string BankCode { get; set; }
+    public int Amount { get; set; } 
     public string VariableSymbol { get; set; } 
+    public DateTime Date { get; set; } 
     
-    public Account Account { get; set; } 
+    
 }
